@@ -43,7 +43,7 @@ The `Controller` folder contains all MATLAB scripts for designing and testing fl
 ### **Usage**  
 1. Clone this repository:  
    ```bash
-   git clone <repository-link>
+   git clone https://github.com/DevangPatwardhan/AION.git
    cd <repository-folder>
    ```  
 2. Navigate to the appropriate folder (`FlightDynamics` or `Controller`) based on your focus.  
