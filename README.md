@@ -1,7 +1,6 @@
-# **AION**
 # **Project Repository**
 
-This repository is designed to organize the MATLAB code for flight dynamics and flight controller development. The repository is divided into structured folders for clarity and ease of navigation.  
+This repository is designed to organize the codes for flight dynamics and flight controller development. The repository is divided into structured folders for clarity and ease of navigation.  
 
 ---
 
