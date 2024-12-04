@@ -26,10 +26,7 @@ The `FlightDynamics` folder contains all MATLAB scripts and models related to an
 The `Controller` folder contains all MATLAB scripts for designing and testing flight controllers.  
 
 #### **Contents:**  
-- **PID Controllers**: Implementation of basic PID-based control for altitude, heading, and speed.  
-- **State Feedback**: LQR and pole placement-based control designs.  
-- **Adaptive Controllers**: Advanced techniques like adaptive or robust control.  
-- **Validation**: Test scripts to validate controller performance against flight dynamics.  
+
 
 #### **Path:**  
 ```plaintext
