@@ -1,3 +1,4 @@
+# **AION**
 # **Project Repository**
 
 This repository is designed to organize the MATLAB code for flight dynamics and flight controller development. The repository is divided into structured folders for clarity and ease of navigation.  
@@ -38,9 +39,7 @@ The `Controller` folder contains all MATLAB scripts for designing and testing fl
 ## **Getting Started**
 
 ### **Prerequisites**  
-- **MATLAB** (R2021a or later recommended)  
-- Control Systems Toolbox  
-- Aerospace Toolbox (optional, if models require)  
+
 
 ### **Usage**  
 1. Clone this repository:  
