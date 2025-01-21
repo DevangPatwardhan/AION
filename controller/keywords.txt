@@ -1,0 +1,5 @@
+MPU6050Handler  KEYWORD1
+setIMUScaleFactor   KEYWORD2
+initializeIMU   KEYWORD2
+calibrateIMU    KEYWORD2
+getIMUData  KEYWORD2
