@@ -67,7 +67,6 @@ void MPU6050::initialize() {
  * @return True if connection is valid, false otherwise
  */
 bool MPU6050::testConnection() {
-    Serial.println(getDeviceID());
     return getDeviceID() == 0x34;
 }
 

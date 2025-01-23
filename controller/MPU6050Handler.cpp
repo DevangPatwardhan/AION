@@ -4,8 +4,7 @@
 
 #include "MPU6050Handler.h"
 
-MPU6050Handler::MPU6050Handler() {
-    // mpu = new MPU6050(104);
+MPU6050Handler::MPU6050Handler(uint8_t addr): mpu(addr) {
     setIMUScaleFactor();
 }
 
@@ -47,7 +46,7 @@ void MPU6050Handler::initializeIMU() {
     */
 
     Wire.begin();
-    Wire.setClock(1000000);     //Note this is 2.5 times the spec sheet 400 kHz max
+    // Wire.setClock(1000000);     //Note this is 2.5 times the spec sheet 400 kHz max
 
     mpu.initialize();
 
@@ -131,6 +130,20 @@ void MPU6050Handler::getIMUData() {
     _gyro[0] = (GyX / _gyro_scale_factor) + _gyro_bias[0];
     _gyro[1] = (GyY / _gyro_scale_factor) + _gyro_bias[1];
     _gyro[2] = (GyZ / _gyro_scale_factor) + _gyro_bias[2];
+
+    Serial.print("AccX:");
+    Serial.print(_acc[0]);
+    Serial.print("AccY:");
+    Serial.print(_acc[1]);
+    Serial.print("AccZ:");
+    Serial.println(_acc[2]);
+
+    Serial.print("GyroX:");
+    Serial.println(_gyro[0]);
+    Serial.print("GyroY:");
+    Serial.println(_gyro[1]);
+    Serial.print("GyroZ:");
+    Serial.println(_gyro[2]);
 }
 
 
