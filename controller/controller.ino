@@ -1,60 +1,89 @@
 #include <Wire.h>
 
-// #include "src/MPU6050/MPU6050.h"
-// MPU6050 imu();
 #include "MPU6050Handler.h"
 MPU6050Handler imu;
 
-// Pin mapping
+#include "ServoController.h"
+ServoController servo;
+
+
+// Define MPU pins
+// Default pin in stm32f722zet6
 // SCL PB8  Connected to MPU 6050
 // SDA PB9  Connected to MPU 6050
 
+// Define servo pins
+#define SERVO1 PA0
+#define SERVO2 PA1  // Subject to change
+#define SERVO3 PA2  // Subject to change
+#define SERVO4 PA3  // Subject to change
+
+// Define ESC pins
+
+
+// Define RC receiver pins
+
+int angle = 0;
+
+MPU6050_ADDR  0x68
+WHO_AM_I 0x75
 void setup() {
   // put your setup code here, to run once:
-  // Serial.begin(115200);
+  // Serial.begin(9600);
 
-  // // i2cScanner();
-  // Wire.begin();
-  // imu.setDeviceID(52);
-  // imu.initialize();
-  // bool conn = imu.testConnection();
-  // Serial.println("Initializing");
-  // Serial.println(conn);
+  test_servo();
 
-  // Serial.begin(115200);
-  // Wire.begin();
-  // Wire.setSCL(PB8);
-  // Wire.setSDA(PB9);
-  // Wire.setClock(400000); // Set I2C clock speed to 400kHz
-  
-  // // Wake up MPU6050
-  // Wire.beginTransmission(MPU6050_ADDR);
-  // Wire.write(PWR_MGMT_1);
-  // Wire.write(0x00);
-  // Wire.endTransmission(true);
-  
-  // // Verify device ID
-  // Wire.beginTransmission(MPU6050_ADDR);
-  // Wire.write(WHO_AM_I);
-  // Wire.endTransmission(false);
-  // Wire.requestFrom(MPU6050_ADDR, 1, true);
-  // byte whoAmI = Wire.read();
-  
-  // if(whoAmI != 0x68) {
-  //   Serial.println("MPU6050 not found!");
-  //   Serial.println(whoAmI, HEX);
-  //   while(1);
-  // }
-  
-  // Serial.println("MPU6050 initialized successfully");
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
 
-  // mpu.getIMUData();
-  delay(1000);
+  // imu.getIMUData();
 
+}
+
+void test_imu() {
+  // Wire.begin();
+  // Serial.println("Initializing");
+  // imu.initializeIMU();
+  // imu.calibrateIMU();
+}
+
+void check_whoami_register() {
+  // Check WHO_AM_I register
+
+  uint8_t whoAmI = readRegister(MPU6050_ADDR, WHO_AM_I);
+
+  if (whoAmI == 0x68 || whoAmI == 0x69) {
+    Serial.print("MPU6050 detected. WHO_AM_I = 0x");
+    Serial.println(whoAmI, HEX);
+  } else {
+    Serial.print("Device not detected. WHO_AM_I = 0x");
+    Serial.println(whoAmI, HEX);
+  }
+  
+}
+
+void test_servo() {
+  Serial.begin(9600);
+  pinMode(SERVO1, OUTPUT);
+  servo.addServo(SERVO1);
+  delay(100);
+  Serial.print("Is Servo attached ");
+  Serial.println(servo.servoAttached());
+  servo.setAngle(0, 90);
+}
+
+void test_servo_loop() {
+  servo.setAngle(0, angle);
+  Serial.print("Angle set = ");
+  Serial.println(angle);
+  if(angle < 90){
+    angle = angle + 2;
+  }else {
+    angle = 0;
+  }
+  delay(2000);
 }
 
 void i2cScanner() {
