@@ -3,3 +3,6 @@ setIMUScaleFactor   KEYWORD2
 initializeIMU   KEYWORD2
 calibrateIMU    KEYWORD2
 getIMUData  KEYWORD2
+ServoController KEYWORD1
+addServo    KEYWORD2
+setAngle    KEYWORD2
