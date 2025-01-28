@@ -2,37 +2,54 @@
 
 #include "PWMReader.h"
 
-PWMReader::PWMReader(uint8_t pin, TIM_TypeDef* timer, uint32_t timerChannel, uint32_t min, uint32_t max)
-: _inputPin(pin), _timer(timer), _timerChannel(timerChannel), _minPulseWidth(min), _maxPulseWidth(max) {}
+PWMReader::PWMReader() {}
+PWMReader::PWMReader(PinName pinName, uint32_t min, uint32_t max)
+: _pinName(pinName), _minPulseWidth(min), _maxPulseWidth(max) {
+  initializeTimer();
+}
 
 void PWMReader::initializeTimer()
 {
-    pinMode(_inputPin, INPUT);
-    HardwareTimer *Timer = new HardwareTimer(_timer);
+    Serial.println("PWM Reader class initialized");
 
-    Timer->setMode(_timerChannel, TIMER_INPUT_CAPTURE_RISING);
-    Timer->attachInterrupt([this]() { this->timerInterruptHandler(); });
-    Timer->resume();
+    TIM_TypeDef *instance = (TIM_TypeDef *)pinmap_peripheral(_pinName, PinMap_PWM);
+    _timerChannel = STM_PIN_CHANNEL(pinmap_function(_pinName, PinMap_PWM));
+    _timer = new HardwareTimer(instance);
+
+    _timer->setMode(_timerChannel, TIMER_INPUT_CAPTURE_RISING);
+    
+    _timer->attachInterrupt(_timerChannel, [this]() {timerInterruptHandler();});
+    // _timer->attachInterrupt(_timerChannel, [this]() {Serial.println("Interrupted");});
+    _timer->resume();
+
+    Serial.println("PWM Reader class initialized end");
 }
 
 void PWMReader::timerInterruptHandler() {
-    static uint32_t lastCaptureTime = 0;
-    uint32_t currentCaptureTime = _timer->CCR1;
-    
-    if (currentCaptureTime > lastCaptureTime) {
-      _pulseWidth = currentCaptureTime - lastCaptureTime;
-    } else {
-      _pulseWidth = (0xFFFF - lastCaptureTime) + currentCaptureTime;
-    }
-    
-    lastCaptureTime = currentCaptureTime;
-    _newPulseReceived = true;
+
+    Serial.println("Handler Called");
+    if(_is_rising_edge) {
+      _startTime = _timer->getCaptureCompare(_timerChannel);
+      // _timer->setMode(_timerChannel, TIMER_INPUT_CAPTURE_FALLING);
+      // _timer->resume();
+
+    } 
+    //else {
+    //   uint32_t endTime = _timer->getCaptureCompare(_timerChannel);
+
+    //   if (endTime >= _startTime) {
+    //     _pulseWidth = endTime - _startTime;
+    //   } else {
+    //     _pulseWidth = (_timer->getOverflow() - _startTime) + endTime;
+    //   }
+    //   _timer->setMode(_timerChannel, TIMER_INPUT_CAPTURE_RISING);
+    // }
+
+    _is_rising_edge = !_is_rising_edge;
+
 }
 
 int PWMReader::getPWM() {
-    if (_newPulseReceived) {
-      _newPulseReceived = false;
-      return map(_pulseWidth, 0, 65535, _minPulseWidth, _maxPulseWidth);
-    }
-    return -1;  // No new pulse
+    // Serial.println(_pulseWidth);
+    return map(_pulseWidth, 0, 65535, _minPulseWidth, _maxPulseWidth);
 }

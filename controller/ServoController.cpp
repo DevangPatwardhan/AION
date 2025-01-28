@@ -6,13 +6,13 @@ ServoController::ServoController()
 
 }
 
-void ServoController::addServo(uint8_t pin)
+void ServoController::addServo(PinName pin)
 {
-    if(servoCount < 4)
+    if(servosAdded < 4)
     {
-        servoPins[servoCount] = pin;
-        servos[servoCount].attach(pin);
-        servoCount++;
+        servoPins[servosAdded] = pin;
+        servos[servosAdded].attach(pin);
+        servosAdded++;
     } else {
         Serial.println("Max servo limit reached");
     }
@@ -27,6 +27,11 @@ void ServoController::setAngle(uint8_t index, int angle)
 
     servos[index].write(angle);
 
+}
+
+int ServoController::readServo(uint8_t index)
+{
+    return servos[index].read();
 }
 
 bool ServoController::servoAttached()

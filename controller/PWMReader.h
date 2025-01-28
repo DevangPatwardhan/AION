@@ -4,18 +4,22 @@ class PWMReader
 {
 
     public:
-        PWMReader(uint8_t pin, TIM_TypeDef* timer, uint32_t timerChannel, uint32_t min, uint32_t max);
+        PWMReader();
+        PWMReader(PinName pinName, uint32_t min=1000, uint32_t max=2000);
         void initializeTimer();
         void timerInterruptHandler();
         int getPWM();
 
+
     private:
-        uint8_t _inputPin;
-        TIM_TypeDef* _timer;
+        PinName _pinName;
+        HardwareTimer* _timer;
         uint32_t _timerChannel;
         uint32_t _minPulseWidth;
         uint32_t _maxPulseWidth;
 
-        volatile uint32_t _pulseWidth;
-        volatile bool _newPulseReceived;
+        uint32_t _startTime = 0;
+        uint32_t _pulseWidth = 0;
+        bool _is_rising_edge = true;
+
 };
