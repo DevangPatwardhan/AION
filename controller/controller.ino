@@ -22,6 +22,8 @@ BLDCMotor motor2(MOTOR2);
 BLDCMotor motor3(MOTOR3);
 BLDCMotor motor4(MOTOR4);
 
+// extern  volatile unsigned long throttlePWM;
+
 
 // Define MPU pins
 // Default pin in stm32f722zet6
@@ -45,12 +47,15 @@ void setup() {
   Serial.begin(115200);
 
   Serial.println("Setup function");
+  // Just to check if PWM is getting generated
+  // Connect PA0 port to PB7 the blue led will be glowing according to the PWM signal
   pinMode(PB7, INPUT);
-  // pinMode(PA0, OUTPUT);
-
   pin_function(PA_0, STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, GPIO_AF1_TIM2, 1, 0));
 
+  // setup for RC communication
   radioSetup();
+
+  // code to test if PWM is working
   test_pwm_generation();
   
   // test_pwm_reception();
@@ -60,18 +65,16 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
 
-  // int pwm = 
-  // motor1.setPWM(pwm)
+  getPulsewidth();
+  // noInterrupts();   
+  // Serial.println("Main.ino");
+  // Serial.println(throttlePWM);
+  // interrupts();
 
   // imu.getIMUData();
   // test_servo_loop();
 
-  // delay(100);
-
-  // digitalWrite(LED, HIGH);  // turn the LED on (HIGH is the voltage level)
-  // delay(1000);                      // wait for a second
-  // digitalWrite(LED, LOW);   // turn the LED off by making the voltage LOW
-  // delay(1000);    
+  delay(100);
 }
 
 void test_pwm_generation() {
@@ -81,35 +84,10 @@ void test_pwm_generation() {
 
   HardwareTimer *timer = new HardwareTimer(instance);
 
-  // timer->setOverflow(1, HERTZ_FORMAT);
-
-  // timer->setMode(channel, TIMER_OUTPUT_COMPARE_PWM1, PA_0);
-
-  // timer->setCaptureCompare(channel, 50, PERCENT_COMPARE_FORMAT);
   timer->setPWM(channel, PA_0, 50, 10);
 
   // timer->resume();
 }
-
-// void test_pwm_reception() {
-  
-//   TIM_TypeDef* instance = (TIM_TypeDef *)pinmap_peripheral(PB_0_ALT1, PinMap_PWM);
-//   uint32_t channel = STM_PIN_CHANNEL(pinmap_function(PB_0_ALT1, PinMap_PWM));
-//   Serial.println(channel);
-//   // channel = 3;
-
-//   HardwareTimer *timer = new HardwareTimer(instance);
-
-//   // timer->setOverflow(1, HERTZ_FORMAT);
-
-//   timer->setMode(channel, TIMER_INPUT_CAPTURE_RISING, PB_0_ALT1);
-
-//   // uint32_t PrescalerFactor = 1;
-//   // MyTim->setPrescaleFactor(PrescalerFactor);
-//   // timer->setOverflow(0x10000);
-//   timer->attachInterrupt(channel, InputCapture_IT_callback);
-//   timer->resume();
-// }
 
 void test_imu() {
   // Wire.begin();
@@ -117,20 +95,6 @@ void test_imu() {
   // imu.initializeIMU();
   // imu.calibrateIMU();
 }
-
-// void check_whoami_register() {
-//   // Check WHO_AM_I register
-
-//   uint8_t whoAmI = readRegister(MPU6050_ADDR, WHO_AM_I);
-
-//   if (whoAmI == 0x68 || whoAmI == 0x69) {
-//     Serial.print("MPU6050 detected. WHO_AM_I = 0x");
-//     Serial.println(whoAmI, HEX);
-//   } else {
-//     Serial.print("Device not detected. WHO_AM_I = 0x");
-//     Serial.println(whoAmI, HEX);
-//   }
-// }
 
 // void test_servo() {
 //   Serial.begin(9600);

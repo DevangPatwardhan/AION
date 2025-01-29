@@ -1,9 +1,10 @@
 #include <Arduino.h>
 
-#define THROTTLE_PIN PB_4
-#define ROLL_PIN  PB_5
-#define PITCH_PIN PB_0_ALT1
-#define YAW_PIN PB_1_ALT1
+// Refer HAL_TIM_MODULE_ENABLED section in PeripheralPins.c to find the pin name for corresponding timer
+#define THROTTLE_PIN PB_4 //TIM3 CH1
+#define ROLL_PIN  PB_6  //TIM4  CH1
+#define PITCH_PIN PA_1 //TIM2 CH2
+#define YAW_PIN PA_2_ALT1  //TIM5  CH3
 
 uint32_t throttleTimerChannel;
 uint32_t rollTimerChannel;
@@ -11,9 +12,9 @@ uint32_t pitchTimerChannel;
 uint32_t yawTimerChannel;
 
 HardwareTimer *throttleTimer;
-// HardwareTimer *rollTimer;
-// HardwareTimer *pitchTimer;
-// HardwareTimer *yawTimer;
+HardwareTimer *rollTimer;
+HardwareTimer *pitchTimer;
+HardwareTimer *yawTimer;
 
 unsigned long throttlePWMRiseTime = 0;
 unsigned long rollPWMRiseTime = 0;
@@ -26,7 +27,7 @@ bool pitchRisingEdge = true;
 bool yawRisingEdge = true;
 
 unsigned long throttleStartTime = 0;
-unsigned long throttlePWM = 0;
+volatile unsigned long throttlePWM = 0;
 
 unsigned long rollStartTime = 0;
 unsigned long rollPWM = 0;
@@ -38,27 +39,43 @@ unsigned long yawStartTime = 0;
 unsigned long yawPWM = 0;
 
 
-
-void timerInterrupt(HardwareTimer* timer, uint32_t &timerChannel, PinName pinName, unsigned long &startTime, bool &isRisingEdge, unsigned long &pulseWidth) {
-
+void timerInterrupt(HardwareTimer* timer, uint32_t &timerChannel, PinName pinName, unsigned long &startTime, bool &isRisingEdge, volatile unsigned long &pulseWidth) {
+/**
+ * Timer callback function that will be executed whenever the PWM pulse changes from
+ * low to high or vice versa and calculated the pulsewidth
+ * 
+ * @param timer: Timer object which handles all timer related functions
+ * @param timerChannel: specific channel of the timer used
+ * @param pinName: Pin name
+ * @param startTime: Last time when the pwm pulse width went high 
+ * @param risingEdge: State maintained whether the current edge is a rising edge
+ * @param pulseWidth: Calculated pulse width of the pwm signal
+ */
   if(isRisingEdge) {
+    // get the time when there is a rising edge
     startTime = timer->getCaptureCompare(timerChannel);
+    // change the timer to watch out for the falling edge
     timer->setMode(timerChannel, TIMER_INPUT_CAPTURE_FALLING, pinName);
     timer->resume();
   } else {
+    // get the time when there is a falling edge
     unsigned long endTime = timer->getCaptureCompare(timerChannel);
 
     if(endTime >= startTime) {
       pulseWidth = endTime - startTime;
     } else {
+      // Incase the code did not get executed when there was a falling edge
       pulseWidth = ((timer->getOverflow() - throttleStartTime) + endTime);
     }
 
-    int scaleFactor = int(trunc(timer->getPrescaleFactor()/timer->getTimerClkFreq()));
-    pulseWidth = pulseWidth*scaleFactor;
+    // int scaleFactor = int(trunc(timer->getPrescaleFactor()/timer->getTimerClkFreq()));
+    // pulseWidth = pulseWidth;
     timer->setMode(timerChannel, TIMER_INPUT_CAPTURE_RISING, pinName);
     timer->resume();
+    Serial.print("Pulsewidth = ");
     Serial.println(pulseWidth);
+    Serial.print("PWM = ");
+    Serial.println((pulseWidth - 3272)/3437.0);
 
   }
 
@@ -71,39 +88,22 @@ void timerInterrupt(HardwareTimer* timer, uint32_t &timerChannel, PinName pinNam
 
 }
 
-// float getPulsewidth(int id) {
-//   switch(id) {
-//     case 0:
-//       // Throttle
-//       float PWM = 
-//       return 
-//   }
-// }
+void getPulsewidth() {
+      // Throttle
+      noInterrupts();
+      float PWM = (throttlePWM - 3272)/3437.0;
+      Serial.println("Main loop");
+      Serial.print("Throttle PWM = ");
+      Serial.println(throttlePWM);
+      Serial.print("PWM = ");
+      Serial.println(PWM);
+      Serial.println("Main loop end");
+      interrupts();
+      // return throttlePWM;
+}
 
 void throttleTimerInterrupt() {
-
   timerInterrupt(throttleTimer, throttleTimerChannel, THROTTLE_PIN, throttleStartTime, throttleRisingEdge, throttlePWM);
-    // if(throttleRisingEdge) {    
-    //     throttleStartTime = throttleTimer->getCaptureCompare(throttleTimerChannel);
-    //     throttleTimer->setMode(throttleTimerChannel, TIMER_INPUT_CAPTURE_FALLING, THROTTLE_PIN);
-    //     throttleTimer->resume();
-    // }else {
-    //     unsigned long endTime = throttleTimer->getCaptureCompare(throttleTimerChannel);
-
-    //     if(endTime >= throttleStartTime) {
-    //         throttlePWM = (endTime - throttleStartTime);
-    //     } else {
-    //         throttlePWM = ((throttleTimer->getOverflow() - throttleStartTime) + endTime);
-    //     }
-    //     throttleTimer->setMode(throttleTimerChannel, TIMER_INPUT_CAPTURE_RISING, THROTTLE_PIN);
-    //     throttleTimer->resume();
-    // }
-
-    // throttleRisingEdge = !throttleRisingEdge;
-    // // *(throttleTimer->getPrescaleFactor()/throttleTimer->getTimerClkFreq())
-    // // Serial.println("Prescale factor");
-    // // Serial.println(throttleTimer->getPrescaleFactor());
-    // Serial.println(throttlePWM);
 }
 
 void rollTimerInterrupt() {
@@ -126,29 +126,34 @@ void radioSetup() {
     throttleTimer = initializeTimer(THROTTLE_PIN);
     throttleTimerChannel = STM_PIN_CHANNEL(pinmap_function(THROTTLE_PIN, PinMap_PWM));
     throttleTimer->setMode(throttleTimerChannel, TIMER_INPUT_CAPTURE_RISING, THROTTLE_PIN);
+    // attach the callback function that should be executed during timer event
     throttleTimer->attachInterrupt(throttleTimerChannel, throttleTimerInterrupt);
-    // throttleTimer->resume();
-    Serial.println("Roll start");
-
-    // rollTimer = initializeTIMER(ROLL_PIN, rollTimerChannel);
-    rollTimerChannel = STM_PIN_CHANNEL(pinmap_function(ROLL_PIN, PinMap_PWM));
-    throttleTimer->setMode(rollTimerChannel, TIMER_INPUT_CAPTURE_RISING, ROLL_PIN);
-    throttleTimer->attachInterrupt(rollTimerChannel, rollTimerInterrupt);
-    // throttleTimer->resume();
-    Serial.println("Pitch start");
-    // pitchTimer = initializeTIMER(PITCH_PIN, pitchTimerChannel);
-    pitchTimerChannel = STM_PIN_CHANNEL(pinmap_function(PITCH_PIN, PinMap_PWM));
-    throttleTimer->setMode(pitchTimerChannel, TIMER_INPUT_CAPTURE_RISING, PITCH_PIN);
-    throttleTimer->attachInterrupt(pitchTimerChannel, pitchTimerInterrupt);
-    // throttleTimer->resume();
-    Serial.println("Yaw start");
-    // yawTimer = initializeTIMER(YAW_PIN, yawTimerChannel);
-    yawTimerChannel = STM_PIN_CHANNEL(pinmap_function(YAW_PIN, PinMap_PWM));
-    throttleTimer->setMode(yawTimerChannel, TIMER_INPUT_CAPTURE_RISING, YAW_PIN);
-    throttleTimer->attachInterrupt(yawTimerChannel, yawTimerInterrupt);
     throttleTimer->resume();
+
+    Serial.println("Roll start");
+    rollTimer = initializeTIMER(ROLL_PIN, rollTimerChannel);
+    rollTimerChannel = STM_PIN_CHANNEL(pinmap_function(ROLL_PIN, PinMap_PWM));
+    rollTimer->setMode(rollTimerChannel, TIMER_INPUT_CAPTURE_RISING, ROLL_PIN);
+    rollTimer->attachInterrupt(rollTimerChannel, rollTimerInterrupt);
+    rollTimer->resume();
+
+    Serial.println("Pitch start");
+    pitchTimer = initializeTIMER(PITCH_PIN, pitchTimerChannel);
+    pitchTimerChannel = STM_PIN_CHANNEL(pinmap_function(PITCH_PIN, PinMap_PWM));
+    pitchTimer->setMode(pitchTimerChannel, TIMER_INPUT_CAPTURE_RISING, PITCH_PIN);
+    pitchTimer->attachInterrupt(pitchTimerChannel, pitchTimerInterrupt);
+    pitchTimer->resume();
+
+    Serial.println("Yaw start");
+    yawTimer = initializeTIMER(YAW_PIN, yawTimerChannel);
+    yawTimerChannel = STM_PIN_CHANNEL(pinmap_function(YAW_PIN, PinMap_PWM));
+    yawTimer->setMode(yawTimerChannel, TIMER_INPUT_CAPTURE_RISING, YAW_PIN);
+    yawTimer->attachInterrupt(yawTimerChannel, yawTimerInterrupt);
+    yawTimer->resume();
+
     // Serial.println(throttleTimer->getTimerClkFreq());
     // Serial.println(throttleTimer->getPrescaleFactor());
+    Serial.println("Radio initialized");
 }
 
 
@@ -156,7 +161,7 @@ HardwareTimer* initializeTimer(PinName pinName) {
     TIM_TypeDef *instance = (TIM_TypeDef *)pinmap_peripheral(pinName, PinMap_PWM);
 
     HardwareTimer *timer = new HardwareTimer(instance);
-    // timer->setPrescaleFactor(108);
+    // set the timer to measure 50Hz pulses
     timer->setOverflow(20000, MICROSEC_FORMAT);
     return timer;
 }

@@ -8,6 +8,9 @@
 #include "src/MPU6050/I2Cdev.h"
 #include "src/MPU6050/MPU6050.h"
 
+/**
+ * This class interfaces MPU 6050 to the main code
+ */
 
 class MPU6050Handler
 {
